@@ -29,7 +29,7 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            sendbuf(ch);
+            getdevicestate(ch);
             // QuoteOfTheMomentClientHandler will close the DatagramChannel when a
             // response is received.  If the channel is not closed within 5 seconds,
             // print an error message and quit.
@@ -41,7 +41,7 @@ public class UdpClient {
         }
     }
 
-    public static void sendbuf(Channel ctx){
+    public static void getdevicestate(Channel ctx){
         int sn = 110000003;
         int count =0;
         int len = 16;
