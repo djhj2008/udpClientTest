@@ -29,7 +29,8 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            getdevicestate(ch);
+            bmpvalueconf(ch);
+            //getdevicestate(ch);
             // QuoteOfTheMomentClientHandler will close the DatagramChannel when a
             // response is received.  If the channel is not closed within 5 seconds,
             // print an error message and quit.
@@ -40,6 +41,46 @@ public class UdpClient {
             group.shutdownGracefully();
         }
     }
+
+    public static void bmpvalueconf(Channel ctx){
+        int sn = 110000003;
+        int count =0;
+        int len = 25;
+
+        byte[] tmpbuf = new byte[25];
+        tmpbuf[0] = 'd';
+        tmpbuf[1] = 1;
+        tmpbuf[2] = (byte)count;
+        byte[] bufsn;
+        bufsn = intToBytel(sn);
+        System.arraycopy(bufsn, 0, tmpbuf, 3, 4);
+        tmpbuf[7] = 4;
+        byte[] buflen;
+        buflen = shortToBytel((short) 14);
+        System.arraycopy(buflen, 0, tmpbuf, 8, 2);
+        tmpbuf[10] = '1';
+        tmpbuf[11] = '1';
+        tmpbuf[12] = '0';
+        tmpbuf[13] = '0';
+        tmpbuf[14] = '0';
+        tmpbuf[15] = '0';
+        tmpbuf[16] = '0';
+        tmpbuf[17] = '0';
+        tmpbuf[18] = '3';
+        tmpbuf[19] = '0';
+        byte[] value;
+        value = intToBytel(1101);
+        System.arraycopy(value, 0, tmpbuf, 20, 4);
+        tmpbuf[24] = 0x36;
+
+
+        try {
+            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("localhost", PORT))).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static void getdevicestate(Channel ctx){
         int sn = 110000003;
@@ -69,7 +110,6 @@ public class UdpClient {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
     }
 
     public static byte[] intToBytel(int number) {
