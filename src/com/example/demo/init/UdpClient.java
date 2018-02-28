@@ -29,8 +29,8 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            bmpvalueconf(ch);
-            //getdevicestate(ch);
+            //bmpvalueconf(ch);
+            getdevicestate(ch);
             // QuoteOfTheMomentClientHandler will close the DatagramChannel when a
             // response is received.  If the channel is not closed within 5 seconds,
             // print an error message and quit.
@@ -67,15 +67,15 @@ public class UdpClient {
         tmpbuf[16] = '0';
         tmpbuf[17] = '0';
         tmpbuf[18] = '3';
-        tmpbuf[19] = '0';
+        tmpbuf[19] = 0;
         byte[] value;
-        value = intToBytel(1101);
+        value = intToBytel(1000);
         System.arraycopy(value, 0, tmpbuf, 20, 4);
-        tmpbuf[24] = 0x36;
+        tmpbuf[24] = (byte)160;
 
 
         try {
-            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("localhost", PORT))).sync();
+            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("124.207.250.67", PORT))).sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -96,14 +96,9 @@ public class UdpClient {
         System.arraycopy(bufsn, 0, tmpbuf, 3, 4);
         tmpbuf[7] = 1;
         byte[] buflen;
-        buflen = shortToBytel((short) 5);
+        buflen = shortToBytel((short) 0);
         System.arraycopy(buflen, 0, tmpbuf, 8, 2);
-        tmpbuf[10] = 0x04;
-        tmpbuf[11] = 0x04;
-        tmpbuf[12] = 0x04;
-        tmpbuf[13] = 0x04;
-        tmpbuf[14] = 0x04;
-        tmpbuf[15] = (byte)0x14;
+        tmpbuf[10] = 0;
 
         try {
             ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("localhost", PORT))).sync();
