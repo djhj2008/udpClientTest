@@ -14,6 +14,8 @@ import io.netty.util.internal.SocketUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+
 public class UdpClient {
     static final int PORT = 16001;
     private static final Logger log= LoggerFactory.getLogger(UdpClient.class);
@@ -29,8 +31,10 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            bmpvalueconf(ch);
+            sendjpg(ch);
+            //bmpvalueconf(ch);
             //getdevicestate(ch);
+
             // QuoteOfTheMomentClientHandler will close the DatagramChannel when a
             // response is received.  If the channel is not closed within 5 seconds,
             // print an error message and quit.
@@ -43,66 +47,120 @@ public class UdpClient {
     }
 
     public static void bmpvalueconf(Channel ctx){
-        int sn = 110000003;
-        int count =0;
-        int len = 25;
-
-        byte[] tmpbuf = new byte[25];
-        tmpbuf[0] = 'd';
-        tmpbuf[1] = 1;
-        tmpbuf[2] = (byte)count;
-        byte[] bufsn;
-        bufsn = intToBytel(sn);
-        System.arraycopy(bufsn, 0, tmpbuf, 3, 4);
-        tmpbuf[7] = 4;
-        byte[] buflen;
-        buflen = shortToBytel((short) 14);
-        System.arraycopy(buflen, 0, tmpbuf, 8, 2);
-        tmpbuf[10] = '1';
-        tmpbuf[11] = '1';
-        tmpbuf[12] = '0';
-        tmpbuf[13] = '0';
-        tmpbuf[14] = '0';
-        tmpbuf[15] = '0';
-        tmpbuf[16] = '0';
-        tmpbuf[17] = '0';
-        tmpbuf[18] = '3';
-        tmpbuf[19] = 0;
+        int len = 14;
+        byte[] tmpbuf = new byte[len];
+        tmpbuf[0] = '1';
+        tmpbuf[1] = '1';
+        tmpbuf[2] = '0';
+        tmpbuf[3] = '0';
+        tmpbuf[4] = '0';
+        tmpbuf[5] = '0';
+        tmpbuf[6] = '0';
+        tmpbuf[7] = '0';
+        tmpbuf[8] = '3';
+        tmpbuf[9] = 0;
         byte[] value;
         value = intToBytel(1000);
-        System.arraycopy(value, 0, tmpbuf, 20, 4);
-        tmpbuf[24] = (byte)160;
+        System.arraycopy(value, 0, tmpbuf, 10, 4);
 
-        sendbuf(ctx,tmpbuf,len);
+        sendbuf(ctx,tmpbuf,len,4);
     }
 
 
     public static void getdevicestate(Channel ctx){
-        int sn = 110000003;
-        int count =0;
-        int len = 16;
+        int len = 10;
+        byte[] tmpbuf = new byte[len];
+        tmpbuf[0] = '1';
+        tmpbuf[1] = '1';
+        tmpbuf[2] = '0';
+        tmpbuf[3] = '0';
+        tmpbuf[4] = '0';
+        tmpbuf[5] = '0';
+        tmpbuf[6] = '0';
+        tmpbuf[7] = '0';
+        tmpbuf[8] = '3';
+        tmpbuf[9] = 0;
+        sendbuf(ctx,tmpbuf,len,1);
+    }
+    public static void sendjpg(Channel ctx) {
+        int len=12;
+        String path = new File("normalup").getAbsolutePath();
+        String filename = path+File.separator+"3.jpg";
+        File fd = new File(filename);
+        int file_len = (int)fd.length();
+        len += file_len;
+        InputStream is =null;
+        byte[] buf = new byte[len];
+        buf[0] = '1';
+        buf[1] = '1';
+        buf[2] = '0';
+        buf[3] = '0';
+        buf[4] = '0';
+        buf[5] = '0';
+        buf[6] = '0';
+        buf[7] = '0';
+        buf[8] = '3';
+        buf[9] = 0;
+        buf[10] = 0;
+        buf[11] = 1;
+        try {
+            is = new FileInputStream(fd);
+            try {
+                int read_len = is.read(buf,12,file_len);
+                log.debug("read len:"+read_len);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-        byte[] tmpbuf = new byte[16];
-        tmpbuf[0] = 'd';
-        tmpbuf[1] = 1;
-        tmpbuf[2] = (byte)count;
-        byte[] bufsn;
-        bufsn = intToBytel(sn);
-        System.arraycopy(bufsn, 0, tmpbuf, 3, 4);
-        tmpbuf[7] = 1;
-        byte[] buflen;
-        buflen = shortToBytel((short) 0);
-        System.arraycopy(buflen, 0, tmpbuf, 8, 2);
-        tmpbuf[10] = 0;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
-        sendbuf(ctx,tmpbuf,len);
+        sendbuf(ctx,buf,len,7);
+
     }
 
-    public static void sendbuf(Channel ctx, byte[] tmpbuf, int len){
-        try {
-            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("124.207.250.67", PORT))).sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+
+    public static void sendbuf(Channel ctx, byte[] tmpbuf, int len,int cmd){
+        String url = "124.207.250.67";
+        //String url = "localhost";
+        byte[] buf = new byte[512];
+        int sn = 110000003;
+        int count = len/501+1;
+        int index = 0;
+        int send_len = 0;
+        log.debug("send count:"+count+" len:"+len);
+        for(int i=0;i<count;i++) {
+            buf[0] = 'd';
+            buf[1] = (byte)count;
+            buf[2] = (byte) i;
+            byte[] bufsn;
+            bufsn = intToBytel(sn);
+            System.arraycopy(bufsn, 0, buf, 3, 4);
+            buf[7] = (byte)cmd;
+            index = i*501;
+            if(len -index >501){
+                send_len = 501;
+            }else{
+                send_len =len%501;
+            }
+            log.debug("send ack:"+i+" send_len:"+send_len+" index："+index);
+            byte[] buflen;
+            buflen = shortToBytel((short)send_len );
+            System.arraycopy(buflen, 0, buf, 8, 2);
+            System.arraycopy(tmpbuf, index, buf, 10, send_len);
+            int sum=0;
+            for(int j=0;j<send_len;j++){
+                sum+=buf[10+j];
+            }
+            buf[10+send_len]=(byte)sum;
+            log.debug("checksum:"+Integer.toHexString(sum));
+            try {
+                //"124.207.250.67"
+                ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(buf,0,send_len+11), SocketUtils.socketAddress(url, PORT))).sync();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -116,6 +174,7 @@ public class UdpClient {
         }
         return b;
     }
+
 
     public static byte[] shortToBytel(short number) {
         int temp = number;
