@@ -29,12 +29,12 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            //bmpvalueconf(ch);
-            getdevicestate(ch);
+            bmpvalueconf(ch);
+            //getdevicestate(ch);
             // QuoteOfTheMomentClientHandler will close the DatagramChannel when a
             // response is received.  If the channel is not closed within 5 seconds,
             // print an error message and quit.
-            if (!ch.closeFuture().await(5000)) {
+            if (!ch.closeFuture().await(30000)) {
                 System.err.println("QOTM request timed out.");
             }
         } finally {
@@ -73,12 +73,7 @@ public class UdpClient {
         System.arraycopy(value, 0, tmpbuf, 20, 4);
         tmpbuf[24] = (byte)160;
 
-
-        try {
-            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("124.207.250.67", PORT))).sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        sendbuf(ctx,tmpbuf,len);
     }
 
 
@@ -100,8 +95,12 @@ public class UdpClient {
         System.arraycopy(buflen, 0, tmpbuf, 8, 2);
         tmpbuf[10] = 0;
 
+        sendbuf(ctx,tmpbuf,len);
+    }
+
+    public static void sendbuf(Channel ctx, byte[] tmpbuf, int len){
         try {
-            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("localhost", PORT))).sync();
+            ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(tmpbuf,0,len), SocketUtils.socketAddress("124.207.250.67", PORT))).sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
