@@ -20,7 +20,7 @@ public class UdpClientHandler extends SimpleChannelInboundHandler<DatagramPacket
             log.debug(i+":0x" + Integer.toHexString(buf[i]));
         }
         if(response.startsWith("d")) {
-            ctx.close();
+            //ctx.close();
         }
     }
 

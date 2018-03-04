@@ -31,8 +31,8 @@ public class UdpClient {
 
             Channel ch = b.bind(0).sync().channel();
 
-            //datareportbuf(ch);
-            sendjpg(ch);
+            datareportbuf(ch);
+            //sendjpg(ch);
             //bmpvalueconf(ch);
             //getdevicestate(ch);
 
@@ -70,7 +70,7 @@ public class UdpClient {
         value = intToBytel(1000);
         System.arraycopy(value, 0, tmpbuf, 10, 4);
 
-        sendbuf(ctx,tmpbuf,len,6);
+        sendbuf(ctx,tmpbuf,len,6,110000003);
     }
 
 
@@ -87,7 +87,7 @@ public class UdpClient {
         tmpbuf[7] = '0';
         tmpbuf[8] = '3';
         tmpbuf[9] = '1';
-        sendbuf(ctx,tmpbuf,len,1);
+        sendbuf(ctx,tmpbuf,len,1,110000003);
     }
     public static void sendjpg(Channel ctx) {
         int len=12;
@@ -149,7 +149,10 @@ public class UdpClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //sendbuf(ctx,buf,len,7);
+        for(int i=0;i<100;i++) {
+            sendbuf(ctx, buf, len, 6, 110000003+i);
+            log.debug("send :"+i);
+        }
     }
 
     public static void datareportbuf(Channel ctx){
@@ -193,18 +196,22 @@ public class UdpClient {
         buf[8] = '3';
         buf[9] = '1';
         System.arraycopy(bmpall, 0, buf, 10, bmpall.length);
-        sendbuf(ctx,buf,bmpall.length+10,11);
+        //sendbuf(ctx,buf,bmpall.length+10,11,110000003);
+        for(int i=0;i<100;i++) {
+            sendbuf(ctx,buf,bmpall.length+10,6,110000003+i);
+            log.debug("send :"+i);
+        }
     }
 
-    public static void sendbuf(Channel ctx, byte[] tmpbuf, int len,int cmd){
-        String url = "124.207.250.67";
-        //String url = "localhost";
+    public static void sendbuf(Channel ctx, byte[] tmpbuf, int len,int cmd,int sn){
+        //String url = "124.207.250.67";
+        String url = "localhost";
         byte[] buf = new byte[512];
-        int sn = 110000003;
         int count = len/501+1;
         int index = 0;
         int send_len = 0;
         log.debug("send count:"+count+" len:"+len);
+
         for(int i=0;i<count;i++) {
             buf[0] = 'd';
             buf[1] = (byte)count;
